@@ -1,0 +1,32 @@
+# Project: stackcal
+# Makefile created by Dev-C++ 6.7.5
+
+CPP      = g++.exe -D__DEBUG__
+CC       = gcc.exe -D__DEBUG__
+WINDRES  = windres.exe
+OBJ      = main.o stack.o
+LINKOBJ  = main.o stack.o
+LIBS     = -L"D:/Dev-Cpp/MinGW32/lib/gcc/i686-w64-mingw32/10.3.0/" -L"D:/Dev-Cpp/MinGW32/lib/gcc/" -L"D:/Dev-Cpp/MinGW32/i686-w64-mingw32/lib/" -L"D:/Dev-Cpp/MinGW32/lib/" -L"D:/Dev-Cpp/MinGW32/lib" -L"D:/Dev-Cpp/MinGW32/i686-w64-mingw32/lib" -g3 -static
+INCS     = -I"D:/Dev-Cpp/MinGW32/lib/gcc/i686-w64-mingw32/10.3.0/include" -I"D:/Dev-Cpp/MinGW32/include" -I"D:/Dev-Cpp/MinGW32/lib/gcc/i686-w64-mingw32/10.3.0/include-fixed" -I"D:/Dev-Cpp/MinGW32/i686-w64-mingw32/include"
+CXXINCS  = -I"D:/Dev-Cpp/MinGW32/include/c++/10.3.0" -I"D:/Dev-Cpp/MinGW32/include/c++/10.3.0/i686-w64-mingw32" -I"D:/Dev-Cpp/MinGW32/include/c++/10.3.0/backward" -I"D:/Dev-Cpp/MinGW32/lib/gcc/i686-w64-mingw32/10.3.0/include" -I"D:/Dev-Cpp/MinGW32/include" -I"D:/Dev-Cpp/MinGW32/lib/gcc/i686-w64-mingw32/10.3.0/include-fixed" -I"D:/Dev-Cpp/MinGW32/i686-w64-mingw32/include"
+BIN      = stackcal.exe
+CXXFLAGS = $(CXXINCS) -Wall -Wextra -g3
+ENCODINGS = -finput-charset=utf-8 -fexec-charset=gbk
+CFLAGS   = $(INCS) -Wall -Wextra -g3
+RM       = del /q /f
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before $(BIN) all-after
+
+clean: clean-custom
+	${RM} $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CC) $(LINKOBJ) -o "$(BIN)" $(LIBS)
+
+main.o: main.c stack.h
+	$(CC) -c main.c -o main.o $(CFLAGS) 
+
+stack.o: stack.c stack.h
+	$(CC) -c stack.c -o stack.o $(CFLAGS) 
