@@ -15,9 +15,9 @@ void initChar(charStack *c)
 
 Status pushChar(charStack *charLink,char opr)
 {
- 	if(charLink->top< MaxSize )
+ 	if(charLink->top < MaxSize )
  	{
- 		charLink->data[++charLink->top] = opr;
+ 		charLink->data[++charLink->top] = opr; // -> 的优先级高于 ++
  		return OK;
 	}
 	else return ERROR;
@@ -61,7 +61,7 @@ double popDouble(doubleStack *doubleLink)
 
 // ----------------- 运算优先级函数实现 -----------
 
-int crntOprPro(char opr)	//当前扫描运算符优先级
+int currentOprPro(char opr)	//当前扫描运算符优先级
 {	
 	int k;
 	switch(opr)
@@ -87,33 +87,39 @@ int topOprPro(char opr)		//栈顶运算符优先级
 
 
 
-void translate(char *infix, char *rvsPolish)
+// ---------- 将中缀表达式翻译为逆波兰式 ----------
+
+void translate(char *infix, char *rvsPolish)  
 {	
-	int i=0;
-	int j=0;
-	int last_out = -1;	 // last_out为 0表示上次输出为数字，1表示上次输出为运算符
-	int last_scan = -1;  // last_scan为 0表示上次扫描为数字, 1表示上次扫描为运算符，区分数字后加空格
+
 	int NUM = 0;
-	int OPR = 1;
+	int OPR = 1;	
+	int last_out = -1;	 // last_out 为 0表示上次输出为数字，1表示上次输出为运算符
+	int last_scan = -1;  // last_scan 为 0表示上次扫描为数字, 1表示运算符
+	// last_out,last_scan这两个变量用于逆波兰式中在相邻数字之间加空格,起到分隔效果
 	
 	charStack char_stack;  
 	initChar(&char_stack);  //暂放运算符
 	
-	while(infix[i]!='\0')	//处理负数 
+	int i = 0;
+	int j = 0;	
+	
+	while(infix[i]!='\0')	//此循环用于处理可能的负数 
 	{
 		if(infix[0]=='-')	//第一位数字为负数时 
 		{          
 			j = strlen (infix);
 			
 			while(j>0) 
-			{ infix[j+5] = infix[j]; j--; }
+			{ infix[j+5] = infix[j]; j--; }  // 右移五位
 			
-			infix[j++] = '('; // 0
-			infix[j++] = '0'; // 1
-			infix[j++] = '-'; // 2
-			infix[j++] = '1'; // 3
-			infix[j++] = ')'; // 4
-			infix[j]   = '*'; // 5
+			infix[0] = '('; 
+			infix[1] = '0'; 
+			infix[2] = '-'; 
+			infix[3] = '1'; 
+			infix[4] = ')'; 
+			infix[5] = '*'; 
+			// 实现将开头的 - 转换为 (0-1)*
 		}
 		
 		if(infix[i] =='(' && infix[i+1] == '-')	// 非第一位负数时 
@@ -130,18 +136,19 @@ void translate(char *infix, char *rvsPolish)
 			infix[j++] = ')';
 			infix[j]   = '*';
 			i = i + 5 ;
+			// 实现将 - 转换为 (0-1)*
 		}
 		i++;
 	}  // 处理负数部分结束
 	
-	i=0;
-	j=0;
+	i = 0;
+	j = 0;
 	
 	while( infix[i] != '\0' )
 	{	
 		//若上次输出数字，上次循环扫描为字符，则表示该数字串结束，则在数字后加空格区分
 		
-		if(last_out == NUM && last_scan == OPR)  // 此函数里的 last_scan 和 last_out 只有在这里有用
+		if(last_out == NUM && last_scan == OPR)  // last_scan 和 last_out 仅在这里有用
 		 { rvsPolish[j++] = ' '; last_out = OPR; }
 		
 		if( (infix[i] >= '0' && infix[i] <= '9' ) || infix[i] == '.' )
@@ -151,21 +158,26 @@ void translate(char *infix, char *rvsPolish)
 			last_out = NUM;
 		}
 		
-		else if( infix[i] == '+'||infix[i] == '-'||infix[i] == '*'||infix[i] == '/'||infix[i] == '(' )
+		else if( infix[i] == '+'||infix[i] == '-'||infix[i] == '*'
+								||infix[i] == '/'||infix[i] == '(' )
 		{
 			last_scan = OPR;
 			
-			if(char_stack.top < 0 || crntOprPro(infix[i]) > topOprPro( getTopChar(&char_stack)) )
-			{ pushChar( &char_stack, infix[i] ); }
+			if(char_stack.top < 0 || 
+			   currentOprPro(infix[i]) > topOprPro(getTopChar(&char_stack)))
+			{ pushChar( &char_stack, infix[i] ); }   //直接入栈的情形
 			
 			else
 			{	
-			    //当前扫描字符优先级不断与栈顶字符优先级比较，当前字符小于栈顶字符时退栈并输出 
-			    while(char_stack.top >= 0 && crntOprPro(infix[i]) < topOprPro(getTopChar(&char_stack)))		
+			    //当前扫描字符优先级不断与栈顶字符优先级比较
+				//当前字符小于栈顶字符时退栈并输出 
+			    while(char_stack.top >= 0 &&
+					  currentOprPro(infix[i]) < topOprPro(getTopChar(&char_stack)))		
 			    { rvsPolish[j++] = popChar(&char_stack); last_out = OPR; }
 				
 			    //当前字符优先级大于栈顶优先级或栈空时当前字符压入字符栈内
-			    if(char_stack.top < 0 || crntOprPro(infix[i]) > topOprPro( getTopChar(&char_stack)) )			 
+			    if(char_stack.top < 0 || 
+				   currentOprPro(infix[i]) > topOprPro( getTopChar(&char_stack)) )			 
 			    { pushChar( &char_stack, infix[i] ); }
 			}
 		}
@@ -181,7 +193,7 @@ void translate(char *infix, char *rvsPolish)
 			while( getTopChar(&char_stack) != '(' ) 
 			{ rvsPolish[j++] = popChar(&char_stack); }
 			
-			popChar(&char_stack);	//将'('出栈 
+			popChar(&char_stack);	//将 ( 出栈 
 		}
 		
 		i++;
@@ -197,12 +209,9 @@ void translate(char *infix, char *rvsPolish)
  
 
 
+// ------------ 计算逆波兰式,返回运算结果 ------------
 
-
-
-
-
-double calculate(char *f )  // 计算逆波兰式 f
+double calculate(char *f )  
 {
 	int i = 0;
 	int kind;		   // char类型转换为 double 类型数据标记 
@@ -215,7 +224,7 @@ double calculate(char *f )  // 计算逆波兰式 f
 	initDouble(&double_stack);
 	
 	while(f[i] != '\0')
-	{	
+	{	 
 		// 若为运算符, 获取栈顶两个元素进行计算 
 		    
 		if(f[i]=='+'||f[i]=='-'||f[i]=='*'||f[i]=='/')			
@@ -240,11 +249,11 @@ double calculate(char *f )  // 计算逆波兰式 f
 			
 			while( (f[i] >= '0' && f[i] <= '9' ) || f[i] == '.' )
 			{
-				if(f[i] == '.') { kind = DECIMAL; i++; continue; } // 有小数点，进行转化
+				if(f[i] == '.') { kind = DECIMAL; i++; continue; } // 有小数点则转化
 				
 				if(kind == INTEGER) { sum = sum*10 + (double)(f[i]-'0'); }
 				
-				else { divider=divider*10; sum = sum + ((double)(f[i]-'0')) / divider; }
+				else { divider=divider*10; sum = sum + ((double)(f[i]-'0')) / divider;}
 				
 				i++;
 			}
@@ -255,7 +264,7 @@ double calculate(char *f )  // 计算逆波兰式 f
 			pushDouble(&double_stack, sum);
 		}
 		
-		i++;		// i++, 准备下一个字符的转换 
+		i++;  //准备下一个字符的转换 
 	}
 	
 	return popDouble(&double_stack);
